@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#define sa_STACK_ALIGNMENT_PAD_SIZE(ALIGNMENT, SZ) (((SZ) % (ALIGNMENT)) ? ((ALIGNMENT) - (SZ) % ALIGNMENT) : 0U)
+#define STACK_ALIGNMENT_PAD_SIZE(ALIGNMENT, SZ) (((SZ) % (ALIGNMENT)) ? ((ALIGNMENT) - (SZ) % ALIGNMENT) : 0U)
 
 typedef struct sa_stack_head {
   size_t tail;
@@ -37,7 +37,7 @@ typedef struct sa_stack_node_padded {
   sa_stack_node contents;
 
   // padding to fill up to an even 16-bytes
-  u8             padding[sa_STACK_ALIGNMENT_PAD_SIZE(STACK_ALIGNMENT, sizeof(sa_stack_node))];
+  u8             padding[STACK_ALIGNMENT_PAD_SIZE(STACK_ALIGNMENT, sizeof(sa_stack_node))];
 } sa_stack_node_padded;
 
 static
@@ -60,7 +60,7 @@ size_t sa_stack_padded_offset(void* a, size_t size) {
   if(alignment_error == 0U) { // good to go
     result = size;
   } else { // must add some padding
-    size_t padding = sa_STACK_ALIGNMENT - alignment_error;
+    size_t padding = STACK_ALIGNMENT - alignment_error;
     result = size + padding; 
   }
 
@@ -97,7 +97,7 @@ void* sa_stack_alloc(void* a, size_t size) {
 
     // setup the first node
 
-    sa_stack_node* first_node = sa_STACK_NODE_PTR(a, first_node_offset);
+    sa_stack_node* first_node = STACK_NODE_PTR(a, first_node_offset);
 
     first_node->prev_offset = 0U;
     first_node->next_offset = tail_offset;
@@ -105,7 +105,7 @@ void* sa_stack_alloc(void* a, size_t size) {
 
     // setup the tail node
 
-    sa_stack_node* tail_node = sa_STACK_NODE_PTR(a, tail_offset);
+    sa_stack_node* tail_node = STACK_NODE_PTR(a, tail_offset);
 
     tail_node->prev_offset = first_node_offset;
     tail_node->next_offset = 0U;
@@ -125,8 +125,8 @@ void* sa_stack_alloc(void* a, size_t size) {
     // check for stack overflow
     assert(new_tail_offset + sizeof(sa_stack_node_padded) < head_node->size);
 
-    sa_stack_node* old_tail_node = sa_STACK_NODE_PTR(a, old_tail_offset);
-    sa_stack_node* new_tail_node = sa_STACK_NODE_PTR(a, new_tail_offset);
+    sa_stack_node* old_tail_node = STACK_NODE_PTR(a, old_tail_offset);
+    sa_stack_node* new_tail_node = STACK_NODE_PTR(a, new_tail_offset);
 
     // update the previous tail node
 
@@ -161,10 +161,10 @@ void sa_stack_free(void* a, void* ptr) {
   size_t data_offset = ((u8*)ptr - byte_ptr);
   size_t node_offset = data_offset - sizeof(sa_stack_node_padded);
 
-  sa_stack_node* cur_node = sa_STACK_NODE_PTR(a, node_offset);
+  sa_stack_node* cur_node = STACK_NODE_PTR(a, node_offset);
   sa_stack_node cur_node_value = *cur_node;
 
-  sa_stack_node* next_node = sa_STACK_NODE_PTR(a, cur_node_value.next_offset);
+  sa_stack_node* next_node = STACK_NODE_PTR(a, cur_node_value.next_offset);
   sa_stack_node next_node_value = *next_node;
 
   // there are 4 distinct cases to handle here
@@ -197,7 +197,7 @@ void sa_stack_free(void* a, void* ptr) {
 
     } else { // this is NOT the last element : case 4
 
-      sa_stack_node* prev_node = sa_STACK_NODE_PTR(a, cur_node_value.prev_offset);
+      sa_stack_node* prev_node = STACK_NODE_PTR(a, cur_node_value.prev_offset);
       
       prev_node->next_offset = cur_node_value.next_offset;
       next_node->prev_offset = cur_node_value.prev_offset;
@@ -211,11 +211,11 @@ void* sa_stack_realloc(void* a, void* ptr, size_t new_size) {
   if(ptr == 0)
     return sa_stack_alloc(a, new_size);
 
-  size_t size_masked = new_size & sa_STACK_ALIGNMENT_MASK;
+  size_t size_masked = new_size & STACK_ALIGNMENT_MASK;
   size_t size_padded;
 
   if(size_masked) {
-    size_padded = new_size + (sa_STACK_ALIGNMENT - size_masked);
+    size_padded = new_size + (STACK_ALIGNMENT - size_masked);
   } else {
     size_padded = new_size;
   }
@@ -224,16 +224,16 @@ void* sa_stack_realloc(void* a, void* ptr, size_t new_size) {
   size_t data_offset = (u8*)ptr - (u8*)a;
   size_t node_offset = data_offset - sizeof(sa_stack_node_padded);
 
-  sa_stack_node* node = sa_STACK_NODE_PTR(a, node_offset);
+  sa_stack_node* node = STACK_NODE_PTR(a, node_offset);
 
   size_t next_offset = node->next_offset;
 
-  sa_stack_node* next_node = sa_STACK_NODE_PTR(a, next_offset);
+  sa_stack_node* next_node = STACK_NODE_PTR(a, next_offset);
 
   if(next_node->next_offset == 0U) { // the memory chunk being reallocated is located last
     size_t new_next_offset = data_offset + size_padded;
     sa_stack_head* head_node = (sa_stack_head*)a;
-    sa_stack_node* new_next_node = sa_STACK_NODE_PTR(a, new_next_offset);
+    sa_stack_node* new_next_node = STACK_NODE_PTR(a, new_next_offset);
 
     node->next_offset = new_next_offset;
     node->chunk_size = size_padded;
@@ -293,7 +293,7 @@ void sa_stack_pop(void* a) {
 
   size_t prev_push_list_offset = *data_ptr;
 
-  sa_stack_node* push_list_tail_node = sa_STACK_NODE_PTR(a, push_list_tail_offset);
+  sa_stack_node* push_list_tail_node = STACK_NODE_PTR(a, push_list_tail_offset);
 
   // make the node the new tail
 
@@ -306,32 +306,32 @@ void sa_stack_pop(void* a) {
 
 // debugging routines
 
-#define sa_STACK_HASH_PRIME 16777619
-#define sa_STACK_HASH_OFFSET 2166136261
+#define STACK_HASH_PRIME 16777619
+#define STACK_HASH_OFFSET 2166136261
 
 size_t sa_stack_meta_hash(void* a) {
-  size_t result = sa_STACK_HASH_OFFSET;
+  size_t result = STACK_HASH_OFFSET;
 
   sa_stack_head* head_node = (sa_stack_head*)a;
 
-  result = result + (head_node->tail * sa_STACK_HASH_PRIME);
-  result = result + (head_node->size * sa_STACK_HASH_PRIME);
+  result = result + (head_node->tail * STACK_HASH_PRIME);
+  result = result + (head_node->size * STACK_HASH_PRIME);
 
   sa_stack_node* cur;
 
   if(head_node->tail == 0U)
     return result;
 
-  cur = sa_STACK_NODE_PTR(a, head_node->tail);
+  cur = STACK_NODE_PTR(a, head_node->tail);
 
   while(cur) {
-    result = result + (cur->prev_offset * sa_STACK_HASH_PRIME);
-    result = result + (cur->next_offset * sa_STACK_HASH_PRIME);
-    result = result + (cur->chunk_size  * sa_STACK_HASH_PRIME);
+    result = result + (cur->prev_offset * STACK_HASH_PRIME);
+    result = result + (cur->next_offset * STACK_HASH_PRIME);
+    result = result + (cur->chunk_size  * STACK_HASH_PRIME);
     if(cur->prev_offset == 0U) {
       cur = 0;
     } else {
-      cur = sa_STACK_NODE_PTR(a, cur->prev_offset);
+      cur = STACK_NODE_PTR(a, cur->prev_offset);
     }
   }
 
@@ -349,7 +349,7 @@ void sa_stack_debug_print_meta(void* a) {
 
   printf("Head[tail: %u, size %u]\n", head_ptr->tail, head_ptr->size);
 
-  node_ptr = sa_STACK_NODE_PTR(a, head_ptr->tail);
+  node_ptr = STACK_NODE_PTR(a, head_ptr->tail);
 
   do {
     size_t cur_offset = (u8*)node_ptr - byte_ptr;

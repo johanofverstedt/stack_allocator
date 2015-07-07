@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "sa_stack_alloc.h"
+#include "sa.h"
 
 void debug_printouts(void* arena) {
   printf("--- META ---\n");
