@@ -8,7 +8,7 @@ An important design goal for the allocator is for the data-structures to enable 
   <li>free</li>
 </ul>
 
-but also enable stack allocator operations that enable the user to free all allocations since the last "push" in constant time:
+but also enable stack allocator operations that enable the user to free all allocations since the last "push" in constant time with a single call to "pop":
 <ul>
   <li>push</li>
   <li>pop</li>
