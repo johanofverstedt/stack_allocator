@@ -1,6 +1,6 @@
 
-#ifndef BFT_TYPES_H
-#define BFT_TYPES_H
+#ifndef SA_TYPES_H
+#define SA_TYPES_H
 
 typedef unsigned char      u8;
 typedef signed char        i8;
