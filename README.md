@@ -13,4 +13,4 @@ but also enable stack allocator operations:
   <li>push</li>
   <li>pop</li>
 </ul>
-These operations enable the user to free all allocations since the last "push" in constant time with a single call to "pop"
+These operations enable the user to free all allocations since the last "push" in constant time with a single call to "pop".
